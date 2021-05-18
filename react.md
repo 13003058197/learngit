@@ -82,8 +82,67 @@ const li = <li>{name}</li>
 rcc 类组件快捷键
 rcf 函数组件快捷键
 
-// 事件
+//事件
+handler = (event) => {
+  event.target.value
+  event.keyCode === 13 // 回车
+}
+hendler2 = (name)=>{
+  return event => {
+    
+  }
+}
+
+<input onChange = {this.handler}></input>
+<input onChnage = {() => {this.handler('zs')}}></input>
+<input onChange = {this.handler2("zs")} type="checkbox" checked={this.state.cheked}></input>
+
+// uuid 和 nanoid 生成随机id的库
+
+// 类型校验
+import PropTypes from "prop-types"
+class A{
+  static propTypes = {
+    name: PropTypes.func.isRequired,
+    list: PropTypes.array.isRequired
+  }
+}
 ```
+
+## 配置代理
+
+```js
+// 解决跨域问题
+// 方法一
+package.json文件中
+"proxy": "http://xxx.com"
+
+// 方法二
+在src下添加setupProxy.js,内容如下(commonj语法)
+cont proxy =require("http-proxy-middleware")
+module.exports = function(app){
+  app.use(
+    // 遇到/api前缀的请求，会触发代理配置
+    proxy("/api", { 
+      // 请求转发给谁
+      target: "https://xxx.com", 
+      // 控制服务器收到的请求头中的host值
+      changeOrigin: true,
+      // 重写请求路径
+      pathRewrite: {"^/api": ""}
+    }),
+    // 配置多个
+    proxy("/api2", { 
+      target: "https://xxx.com",
+      changeOrigin: true,
+      pathRewrite: {"^/api": ""}
+    })
+  )
+}
+
+```
+
+
 
 ## 生命周期
 
@@ -110,7 +169,7 @@ class A {
    // 初始化
   constructor
   getDerivedStateFromProps
- 	render
+  render
   componentDidMount
   // 更新
   #派生状态，如果state的值取决于props，使用该方法。很少用   
@@ -162,7 +221,7 @@ myRef = React.createRef();
 <input ref={this.myRef} />
 ```
 
-## 高阶函数 和 柯里化
+## 事件（高阶函数 和 柯里化）
 
 ```jsx
 //高阶函数：一个函数，接受一个函数作为参数或者返回一个函数
@@ -179,30 +238,253 @@ changeHandle = (name) => {
 <input onChange={event => {this.changeHandle("password", event.target.value)}/>
 ```
 
+## 消息订阅与发布
+
+```js
+import PubSub from "pubsub-js"
+
+var token = PubSub.subscribe("hello", function(eventName, data){})
+PubSub.publish("hello", {name: "zs"})
+```
+
+## react-router
+
+```jsx
+npm i --save react-router-dom
+// history.js 库 简化原生history操作
+const history = History.createBrowserHistory();
+const history = History.createHashHistory()
+
+ReactDOM.render(
+	<BrowserRouter>
+  	<Link to="/home">Home</Link>
+    <Link to="/about">About</Link>
+    <Switch exact>
+     	<Route path="/about" components={About}></Route>
+      // 嵌套路由，不建议开启严格模式，先匹配外层，再继续匹配嵌套路由
+      <Route path="/home" components={Home}>
+      	<Route path="/home/news"></Route>
+        <Route path="/home/message"></Route>
+      </Route>
+      <Redirect to="/about"></Redirect> // 兜底，重定向
+    </Switch>
+  </BrowserRouter>,
+  document.getElementById("app")
+)
+
+// 路由组件会接受 history，location，match参数
+// 用withRouter(App): 在一般组件中加上路由api
+history
+	go(),goBack(),goFroward(),push(),replace()
+location
+	pathname, search, state
+match
+ params, path, url;
+
+// replace 模式
+<Link replace>about</Link>
+
+//<NavLink> 模式会添加.active类做高亮显示，也可以自定义选中的类型activeClassName="myActive"
+<NavLink to="/about" activeClassName="myActive">About</NavLink>
+封装一个自己的NavLink
+function MyLink(){
+  return <NavLink activeClassName="myActive" {...this.props}></NavLink>
+}
+
+// 多级路径问题
+% PUBLIC_URL%
+```
+
+### 参数传递
+
+ ```jsx
+// params
+<Route path="/home/:id" />
+this.props.match.params
+
+//search  xxx?a=1
+this.props.location.search;
+import qs from "querystring"
+qs.stringify(obj)
+qs.parse(this.props.location.search.slice(1))
+
+// state
+<Link to={{path: "/home", state: {a: 1}}} />
+this.props.location.state
+
+// 编程式导航
+this.props.history.push(url, state)
+this.props.history.push("/home", {a: 1})
+ ```
+
+## ant-design
+
+```js
+codesandbox，codeopen 在线编辑器
+css按需引入
+自定义主题颜色，通过修改less文件，来达到修改css文件的目的
+```
+
+## Redux
+
+```jsx
+// store
+import {createStore} from "redux"
+export default createStore(myReducer)
+
+// reducer
+cosnt initState = 0;
+export default function myReducer(preState = initState, action){
+    const {type, data} = action;
+    switch(type){
+        case "increment":
+            return preState + data;
+        case "decrement":
+            return preStte - data;
+        default:
+            return preState
+    }
+}
+// store Api
+store.getState();
+store.dispatch({type: "increment", data})
+store.subscribe(() => {
+    this.setState({}) // 监听store变化，来更新state
+    ReactDOM.render(<App></App>, document.getElementById("root"))
+})
+
+```
+
+### Action
+
+```js
+// 同步
+export incrementAction(data){
+    return {type: "increment", data}
+}
+
+```
+
+### 异步Action redux-thunk
+
+```js
+// 中间件
+import {createStore, applyMiddleware} from "redux"
+import thunk from "redux-thunk"
+createStore(myReducer, applyMiddleware(thunk))
+// action
+export function AsyncAction(id){
+    return dispatch => {
+        const data = await getInfo(id);
+        dispatch({type: "increment"}, data) #dispatch
+    }
+}
+// 调用
+store.dispatch(AsyncAction(id)) #dispatch
+```
+
+### react-redux
+
+```jsx
+// 简化redux
+import {connect, Provider} from "react-redux"
+// 容器组件，负责和redux通信，将结果交给ui组件
+// 下面两个函数返回的对象，注入到UI组件中props中 this.props.count / this.props.add(1)
+function mapStateToProps(state){
+    return {count: state}
+}
+function mapDispatchToProps(dispatch){
+    return {
+        add: (data)=>{ dispatch({type: "add", data}) }
+    }
+}
+export default connect(mapStateToProps, mapDispatchToProps)(UIComponents)
+
+// 调用容器组件
+<Container store = {store} /> //或
+<Provider store={store}>
+    <Container store = {store} />
+</Provider>
+    
+// mapDispatchToProps 也可以是对象
+    mapDispatchToProps ={
+        add: data=>（{type: "add", data},
+        add: AddAction        
+    }
+```
+
+### 多个reducer
+
+```js
+import {combineReducer} from "redux"
+cosnt allReducer = combineReducers({
+    count: countReducer,
+    person: personReducer
+})
+export createStore(allReducer, applyMiddleware(thunk))
+
+// 读取
+this.props.person.xxx
+this.props.count.xxx
+```
+
+### 纯函数、高阶函数
+
+```js
+// 纯函数 reducer必须是一个纯函数
+1.同样的输入，必须得到同样的输出
+2.不得改写参数数据
+3.不产生任何副作用，例如：网络请求，输入输出设备
+
+//高阶函数
+参数是函数，或者返回是函数
+```
+
+### devTools
+
+```js
+chrome插件 redux devTools
+js库： npm install redux-devtools-extension
+
+import {composeWithDevTools} from "redux-devtools-extension"
+createStore(allReducer, composeWithDevTools(applyMiddleware(thunk)))
+```
 
 
-## Hooks
+
+
+
+## Hooks (16.8)
+
+### useState
+
+```jsx
+function fn(){
+    const [count, setCount] = React.useState(0)
+    function add(){
+        setCount(count+1)
+    }
+    return <button onClick={add}>count</button>
+}
+```
+
+
 
 ### useEffect 
 
 ```jsx
 // 在函数式组件中，执行模拟生命周期钩子 
-import React from "react"
-import ReactDOM from "react-dom"
 
-function comp{
-  const [count, setCount] = React.useState(0)
-  
-  React.useEffect(() => {
-    // componentDidMount
-    // compoentDidUpdate
-    return () => {
-      // componentWillUnmount
+React.useEffect(() =>{}) // didMounted + 监听所有属性
+React.useEffect(() => {}, []) // didMounted
+React.useEffect(() =>{}, [count]) // didMounted + 监听count的变化
+React.useEffect(()=> {
+    return ()=>{
+        // componentWillUnmount
     }
-  }, []) // 监听变化的属性
-  
-  React.useEffect(() => {}) // 监听所有变化 
-}
+})
+
+
 ```
 
 ### refHook
@@ -217,6 +499,37 @@ this.myRef.current.value
 const myRef =  React.useRef()
 <input ref={myRef}></input>
 ```
+
+## 打包运行
+
+```js
+npm i serve -g
+在项目根目录下运行 serve build
+```
+
+## setState
+
+```js
+// 状态更新是异步的
+this.setState({}, callback)
+this.setState((state, props)=>({
+    count: state.count++
+}), callback)
+```
+
+## 路由懒加载lazyload
+
+```jsx
+import {lazy, Suspense} from "react"
+const Home = lazy(() => import("./Home"))
+
+const dom = 
+      <Suspense fallbck={<div>loading...</div>}>
+          <Route path="/home" component={home}></Route>
+      </Suspense>
+```
+
+
 
 ## Fragment
 
@@ -240,7 +553,7 @@ class A extends React.Component{
   render(){
     return (
       #
-    	<MyContext.Provider value={this.state.username}> 
+      <MyContext.Provider value={this.state.username}> 
         <B></B>
       </MyContext.Provider>
     )
@@ -248,7 +561,7 @@ class A extends React.Component{
 }
 class C {
   static contextType = MyContext # 
-	console.log(this.context) #类组件读取方式 1
+  console.log(this.context) #类组件读取方式 1
 }
 
 #函数组件和类组件读取方式 2
@@ -308,8 +621,8 @@ function A(){
 #只适用于生产环境
 class Parent extends React.Components{
   state = { hasError: ""}
-  // 只能捕获后代生命周期函数中的错误
-	static getDerivedStateFromError(error){
+  // 只能捕获后代 -生命周期函数- 中的错误
+  static getDerivedStateFromError(error){
     return { hasError: error  } // 返回新的state
   }
 
